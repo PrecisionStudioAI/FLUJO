@@ -35,17 +35,19 @@ jobs:
         run: |
           HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm install --production=false --no-optional
       
-      - name: Temporarily rename .babelrc for Next.js build
+      - name: Temporarily rename Babel config files for Next.js build
         run: |
-          mv .babelrc .babelrc.backup
+          mv .babelrc .babelrc.backup || true
+          mv babel.config.js babel.config.js.backup || true
       
       - name: Build application
         run: |
           npm run build:ci
       
-      - name: Restore .babelrc
+      - name: Restore Babel config files
         run: |
-          mv .babelrc.backup .babelrc
+          mv .babelrc.backup .babelrc || true
+          mv babel.config.js.backup babel.config.js || true
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
