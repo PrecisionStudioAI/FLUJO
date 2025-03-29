@@ -2,16 +2,38 @@
 
 This guide explains how to deploy FLUJO in a server environment without Electron dependencies. This is ideal for low-resource servers like 1GB RAM droplets where installing the full Electron package can be problematic.
 
-## Deploying on Low-Memory Servers (1GB RAM)
+## 💪 Ultra-Low-Memory Deployment (For 1GB RAM Droplets)
 
-For very resource-constrained environments like 1GB RAM droplets, use our optimized deployment method:
+For extremely limited environments (1GB RAM), use our specialized deployment script:
 
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/FLUJO.git
 cd FLUJO
 
-# One-step deployment (creates swap file, installs dependencies, builds with memory limits, starts server)
+# Run the all-in-one ultra-low-memory deployment script
+npm run deploy:1gb
+```
+
+This optimized script:
+1. Creates a 2GB swap file (required for building on 1GB RAM)
+2. Cleans previous build artifacts
+3. Installs dependencies with minimal memory usage
+4. Builds the application with ultra-low memory constraints
+5. Starts the headless server in network mode
+
+**Note:** The first build on a 1GB RAM system might take longer than usual due to memory constraints.
+
+## Deploying on Low-Memory Servers (2GB RAM)
+
+For moderately resource-constrained environments like 2GB RAM droplets:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/FLUJO.git
+cd FLUJO
+
+# One-step deployment
 npm run deploy:minimal
 ```
 
@@ -154,8 +176,8 @@ This is common on low-memory servers (1GB RAM):
 # Create a swap file (if not already done)
 npm run setup:swap
 
-# Use the memory-constrained build process
-npm run build:low-memory
+# Use the ultra-low-memory build process
+npm run deploy:1gb
 ```
 
 ### Server won't start
