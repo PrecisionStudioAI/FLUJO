@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -76,79 +76,96 @@ jobs:
           echo "Total size of .next directory:"
           du -sh .next/
       
-      - name: Prepare server deployment package
+      # Create a comprehensive deployment package
+      - name: Create deployment archive directly
         run: |
-          mkdir -p deployment
-          cp -r .next deployment/
-          cp package.json deployment/
-          cp next.config.ts deployment/
-          cp -r scripts deployment/
-          cp -r public deployment/
-          # Create a minimal package-lock for installation
-          npm ls --prod --json > deployment/package-tree.json
+          # Create a directory for all files
+          mkdir -p build_output
+          
+          # Copy all essential directories and files
+          cp -r .next build_output/next
+          cp -r scripts build_output/
+          cp -r public build_output/
+          cp -r docs build_output/ || true
+          
+          # Create db directory if it doesn't exist
+          mkdir -p build_output/db
+          
+          # Config files
+          cp package.json build_output/
+          cp next.config.ts build_output/
+          cp server.js build_output/ || true
+          
+          # Additional config files if they exist
+          cp jsconfig.json build_output/ || true
+          cp tsconfig.json build_output/ || true
+          
+          # Add LICENSE and README files
+          cp LICENSE build_output/ || true
+          cp README.md build_output/ || true
+          cp SERVER.md build_output/ || true
+          
+          # Create package.json info for dependency installation
+          npm ls --prod --json > build_output/package-tree.json
+          
           # Add node_modules/.package-lock.json if it exists
           if [ -f "node_modules/.package-lock.json" ]; then
-            cp node_modules/.package-lock.json deployment/
+            cp node_modules/.package-lock.json build_output/
           fi
-          # Copy any other necessary files for server operation
-          ls -la deployment/
-      
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flujo-build
-          path: deployment/
-          retention-days: 7
           
-  create-release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && contains(github.ref, 'feature/server')
-    
-    steps:
-      - name: Debug GitHub context
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "Comparison result: ${{ contains(github.ref, 'feature/server') }}"
-      
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: flujo-build
-          path: flujo-build
-      
-      - name: Verify downloaded artifacts
-        run: |
-          echo "Downloaded artifacts:"
-          ls -la flujo-build/
-          if [ ! -d "flujo-build/.next" ]; then
-            echo "Error: .next directory is missing from downloaded artifacts"
-            exit 1
+          # Create an installation script for convenience
+          cat > build_output/setup.sh << 'EOF'
+          #!/bin/bash
+          # Setup script for FLUJO Server
+          
+          # Create symlink for Next.js directory if needed
+          if [ ! -L ".next" ] && [ -d "next" ]; then
+            ln -s next .next
           fi
-          echo "Size of .next directory:"
-          du -sh flujo-build/.next/
-      
-      - name: Create deployment archive
-        run: |
-          cd flujo-build
+          
+          # Install dependencies
+          echo "Installing production dependencies..."
+          npm install --production
+          
+          echo "Setup complete! Start the server with:"
+          echo "NODE_ENV=production node scripts/headless-server.js --network"
+          EOF
+          
+          # Make it executable
+          chmod +x build_output/setup.sh
+          
+          # List all files before archiving
+          echo "Contents being archived:"
+          find build_output -type f | sort
+          
+          # Create tarball directly
+          cd build_output
           tar -czvf ../flujo-server-build.tar.gz .
-      
-      - name: Verify archive contents
-        run: |
+          cd ..
+          
+          # Verify the archive
           echo "Archive file size:"
           ls -la flujo-server-build.tar.gz
-          echo "Testing archive extraction..."
+          
+          # Test extract to verify contents
           mkdir -p test-extract
           tar -xzvf flujo-server-build.tar.gz -C test-extract
+          
           echo "Extracted contents:"
-          ls -la test-extract/
-          if [ ! -d "test-extract/.next" ]; then
-            echo "Error: .next directory is missing from the archive"
+          find test-extract -type f | sort
+          
+          echo "Checking for 'next' directory..."
+          if [ ! -d "test-extract/next" ]; then
+            echo "ERROR: 'next' directory is missing from the archive"
             exit 1
           fi
+          
+          echo "Size of next directory:"
+          du -sh test-extract/next/
       
+      # Only create the release if we're on feature/server and it's a push event
       - name: Create GitHub Release
+        if: github.event_name == 'push' && contains(github.ref, 'feature/server')
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
@@ -164,12 +181,16 @@ jobs:
             # Extract the build
             tar -xzvf flujo-server-build.tar.gz
             
-            # Install dependencies
-            npm install --production
+            # Run the setup script (installs dependencies and creates symlinks)
+            ./setup.sh
             
             # Start the server
             NODE_ENV=production node scripts/headless-server.js --network
             ```
+            
+            ## Note
+            The Next.js build directory is renamed from `.next` to `next` in this package.
+            The setup script will create the necessary symlink automatically.
             
             ## Build Information
             - Build Number: ${{ github.run_number }}
