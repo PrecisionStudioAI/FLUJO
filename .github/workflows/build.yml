@@ -29,11 +29,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: feature/server  # Explicitly checkout feature/server branch
+      
+      - name: Verify branch
+        run: |
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $CURRENT_BRANCH"
+          if [[ "$CURRENT_BRANCH" != "feature/server" ]]; then
+            echo "Error: Not on feature/server branch"
+            exit 1
+          fi
       
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
       
       - name: Install dependencies (without Electron)
         run: |
@@ -46,23 +58,46 @@ jobs:
       
       - name: Build application
         run: |
-          npm run build:ci
+          HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm run build:ci
       
       - name: Restore Babel config files
         run: |
           mv .babelrc.backup .babelrc || true
           mv babel.config.js.backup babel.config.js || true
       
+      - name: Verify build output
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "Error: .next directory not found. Build failed."
+            exit 1
+          fi
+          echo "Build directory contents:"
+          ls -la .next/
+          echo "Total size of .next directory:"
+          du -sh .next/
+      
+      - name: Prepare server deployment package
+        run: |
+          mkdir -p deployment
+          cp -r .next deployment/
+          cp package.json deployment/
+          cp next.config.ts deployment/
+          cp -r scripts deployment/
+          cp -r public deployment/
+          # Create a minimal package-lock for installation
+          npm ls --prod --json > deployment/package-tree.json
+          # Add node_modules/.package-lock.json if it exists
+          if [ -f "node_modules/.package-lock.json" ]; then
+            cp node_modules/.package-lock.json deployment/
+          fi
+          # Copy any other necessary files for server operation
+          ls -la deployment/
+      
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: flujo-build
-          path: |
-            .next/
-            package.json
-            scripts/headless-server.js
-            public/
-            next.config.ts
+          path: deployment/
           retention-days: 7
           
   create-release:
@@ -76,16 +111,42 @@ jobs:
           echo "Event name: ${{ github.event_name }}"
           echo "GitHub ref: ${{ github.ref }}"
           echo "Comparison result: ${{ contains(github.ref, 'feature/server') }}"
+      
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: flujo-build
           path: flujo-build
       
+      - name: Verify downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -la flujo-build/
+          if [ ! -d "flujo-build/.next" ]; then
+            echo "Error: .next directory is missing from downloaded artifacts"
+            exit 1
+          fi
+          echo "Size of .next directory:"
+          du -sh flujo-build/.next/
+      
       - name: Create deployment archive
         run: |
           cd flujo-build
           tar -czvf ../flujo-server-build.tar.gz .
+      
+      - name: Verify archive contents
+        run: |
+          echo "Archive file size:"
+          ls -la flujo-server-build.tar.gz
+          echo "Testing archive extraction..."
+          mkdir -p test-extract
+          tar -xzvf flujo-server-build.tar.gz -C test-extract
+          echo "Extracted contents:"
+          ls -la test-extract/
+          if [ ! -d "test-extract/.next" ]; then
+            echo "Error: .next directory is missing from the archive"
+            exit 1
+          fi
       
       - name: Create GitHub Release
         id: create_release
@@ -96,6 +157,7 @@ jobs:
           tag_name: server-build-v${{ github.run_number }}
           body: |
             Server build of FLUJO (no Electron dependencies)
+            Built from feature/server branch.
             
             ## Installation
             ```bash
@@ -103,12 +165,16 @@ jobs:
             tar -xzvf flujo-server-build.tar.gz
             
             # Install dependencies
-            cd flujo-build
             npm install --production
             
             # Start the server
             NODE_ENV=production node scripts/headless-server.js --network
             ```
+            
+            ## Build Information
+            - Build Number: ${{ github.run_number }}
+            - Commit: ${{ github.sha }}
+            - Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           draft: false
           prerelease: false
         env:
