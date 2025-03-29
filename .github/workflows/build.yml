@@ -20,7 +20,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, self-hosted-linux, precision-runner]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -61,7 +61,7 @@ jobs:
           
   create-release:
     needs: build
-    runs-on: [self-hosted, self-hosted-linux, precision-runner]
+    runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/feature/server'
     
     steps:
