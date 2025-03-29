@@ -15,7 +15,9 @@
     "electron-pack": "npm run build && electron-builder --dir",
     "electron-dist": "npm run build && electron-builder",
     "electron-dist-all": "npm run build && electron-builder -mwl",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "node scripts/custom-install.js",
+    "postinstall:electron": "electron-builder install-app-deps",
+    "install:server": "npm install --no-optional",
     "headless": "electron . --headless",
     "headless-docs": "electron . --headless --docs",
     "headless-timeout": "electron . --headless --timeout=60",
@@ -26,7 +28,11 @@
     "open-docs:api": "node scripts/open-docs.js --api",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build:server": "NODE_ENV=production SERVER_BUILD=true next build",
+    "deploy:server": "node scripts/server-deploy.js",
+    "start:server": "NODE_ENV=production SERVER_BUILD=true npm run start",
+    "start:server:network": "NODE_ENV=production SERVER_BUILD=true FLUJO_NETWORK_MODE=1 npm run start"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -43,7 +49,6 @@
     "@xenova/transformers": "^2.17.2",
     "@xyflow/react": "^12.4.4",
     "crypto-js": "^4.2.0",
-    "electron-is-dev": "^3.0.1",
     "install": "^0.13.0",
     "isomorphic-git": "^1.30.1",
     "jszip": "^3.10.1",
@@ -82,8 +87,6 @@
     "@typescript-eslint/parser": "^8.28.0",
     "buffer": "^6.0.3",
     "concurrently": "^9.1.2",
-    "electron": "^35.1.0",
-    "electron-builder": "^25.1.8",
     "eslint": "^9.23.0",
     "eslint-config-next": "15.2.4",
     "eslint-import-resolver-typescript": "^4.2.3",
@@ -102,6 +105,11 @@
     "wait-on": "^8.0.3",
     "webpack": "^5.98.0",
     "ws": "^8.18.1"
+  },
+  "optionalDependencies": {
+    "electron": "^35.1.0",
+    "electron-builder": "^25.1.8",
+    "electron-is-dev": "^3.0.1"
   },
   "overrides": {
     "swagger-ui-react": {

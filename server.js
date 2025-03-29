@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Check if we're running in Electron
-const isElectron = process.versions.hasOwnProperty('electron');
+const isElectron = process.versions && process.versions.hasOwnProperty('electron');
 
 // Default port
 const port = parseInt(process.env.PORT || '4200', 10);
@@ -33,6 +33,7 @@ if (isElectron) {
 }
 
 // Override with environment variable if set
+// This allows server deployments to enable network mode without Electron
 if (process.env.FLUJO_NETWORK_MODE === '1' || process.env.FLUJO_NETWORK_MODE === 'true') {
   networkMode = true;
 }
