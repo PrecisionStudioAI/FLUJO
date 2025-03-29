@@ -4,11 +4,31 @@ This guide explains how to deploy FLUJO in a server environment without Electron
 
 ## 💪 Ultra-Low-Memory Deployment (For 1GB RAM Droplets)
 
-For extremely limited environments (1GB RAM), use our specialized deployment script:
+For extremely limited environments (1GB RAM), we offer two approaches:
+
+### Option 1: CI-Based Deployment (Recommended)
+
+The most reliable way to deploy on 1GB RAM systems is using our CI-based deployment approach.
+This method builds the application on CI servers (not on your low-memory server) and deploys the pre-built artifacts:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/FLUJO.git
+git clone https://github.com/PrecisionStudioAI/FLUJO.git
+cd FLUJO
+
+# Deploy from pre-built artifacts
+npm run deploy:from-artifacts
+```
+
+See the detailed guide at [docs/ci-deployment.md](docs/ci-deployment.md) for more information.
+
+### Option 2: Direct Build (Legacy Method)
+
+You can also build directly on the 1GB RAM server, though this may be less reliable:
+
+```bash
+# Clone the repository
+git clone https://github.com/PrecisionStudioAI/FLUJO.git
 cd FLUJO
 
 # Run the all-in-one ultra-low-memory deployment script

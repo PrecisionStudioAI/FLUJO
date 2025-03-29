@@ -1,0 +1,97 @@
+name: Build FLUJO Application
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies (without Electron)
+        run: |
+          HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm install --production=false --no-optional
+      
+      - name: Build application
+        run: |
+          npm run build:headless
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: flujo-build
+          path: |
+            .next/
+            package.json
+            scripts/headless-server.js
+            public/
+            next.config.ts
+          retention-days: 7
+          
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: flujo-build
+          path: flujo-build
+      
+      - name: Create deployment archive
+        run: |
+          cd flujo-build
+          tar -czvf ../flujo-server-build.tar.gz .
+      
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: flujo-server-build.tar.gz
+          name: FLUJO Server Build ${{ github.run_number }}
+          tag_name: server-build-v${{ github.run_number }}
+          body: |
+            Server build of FLUJO (no Electron dependencies)
+            
+            ## Installation
+            ```bash
+            # Extract the build
+            tar -xzvf flujo-server-build.tar.gz
+            
+            # Install dependencies
+            cd flujo-build
+            npm install --production
+            
+            # Start the server
+            NODE_ENV=production node scripts/headless-server.js --network
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

@@ -45,7 +45,8 @@
     "build:low-memory": "node scripts/build-low-memory.js",
     "deploy:low-memory": "npm run install:headless && npm run build:low-memory",
     "deploy:minimal": "npm run setup:swap && npm run deploy:low-memory && npm run headless-server:network",
-    "deploy:1gb": "bash scripts/ultra-low-memory-deploy.sh"
+    "deploy:1gb": "bash scripts/ultra-low-memory-deploy.sh",
+    "deploy:from-artifacts": "bash scripts/deploy-server-from-artifact.sh"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
