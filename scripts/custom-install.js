@@ -11,13 +11,14 @@ const { spawn } = require('child_process');
 const { existsSync } = require('fs');
 const path = require('path');
 
-// Detect if we're in a server environment
+// Detect if we're in a server environment - added HEADLESS_SERVER flag
 const isServerBuild = process.env.SERVER_BUILD === 'true';
-// Check for the INCLUDE_ELECTRON environment variable
+const isHeadlessServer = process.env.HEADLESS_SERVER === 'true';
 const skipElectron = process.env.INCLUDE_ELECTRON === 'false';
-const isServerEnvironment = isServerBuild || skipElectron || 
-                           (process.env.NODE_ENV === 'production' && 
-                            !process.env.ELECTRON_RUN_AS_NODE);
+const forceServerMode = process.env.FORCE_SERVER_MODE === 'true';
+
+// If any of these conditions are true, we're in a server environment
+const isServerEnvironment = isServerBuild || forceServerMode || skipElectron || isHeadlessServer;
 
 // Get the package.json path
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -50,13 +51,22 @@ async function main() {
       return;
     }
     
-    // Otherwise, run the electron-specific postinstall script
-    console.log('Desktop environment detected. Installing Electron dependencies...');
-    await runCommand('npm', ['run', 'postinstall:electron']);
-    
+    // Check if electron-builder is installed before running postinstall:electron
+    try {
+      const electronBuilderPath = require.resolve('electron-builder/cli/cli.js', { paths: [process.cwd()] });
+      if (electronBuilderPath) {
+        console.log('Desktop environment detected. Installing Electron dependencies...');
+        await runCommand('npm', ['run', 'postinstall:electron']);
+      } else {
+        console.log('electron-builder not found. Skipping Electron dependencies installation.');
+      }
+    } catch (err) {
+      console.log('electron-builder not available. Skipping Electron dependencies installation.');
+    }
   } catch (error) {
     console.error('Error during installation:', error);
-    process.exit(1);
+    // Don't exit with error code - allow installation to continue without Electron
+    console.log('Continuing installation without Electron dependencies.');
   }
 }
 

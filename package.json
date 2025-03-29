@@ -17,7 +17,7 @@
     "electron-dist-all": "npm run build && electron-builder -mwl",
     "postinstall": "node scripts/custom-install.js",
     "postinstall:electron": "electron-builder install-app-deps",
-    "install:server": "INCLUDE_ELECTRON=false npm install --no-optional",
+    "install:server": "HEADLESS_SERVER=true npm install --no-optional",
     "headless": "electron . --headless",
     "headless-docs": "electron . --headless --docs",
     "headless-timeout": "electron . --headless --timeout=60",
@@ -32,7 +32,14 @@
     "build:server": "NODE_ENV=production SERVER_BUILD=true next build",
     "deploy:server": "node scripts/server-deploy.js",
     "start:server": "NODE_ENV=production SERVER_BUILD=true npm run start",
-    "start:server:network": "NODE_ENV=production SERVER_BUILD=true FLUJO_NETWORK_MODE=1 npm run start"
+    "start:server:network": "NODE_ENV=production SERVER_BUILD=true FLUJO_NETWORK_MODE=1 npm run start",
+    
+    "headless-server": "node scripts/headless-server.js",
+    "headless-server:network": "node scripts/headless-server.js --network",
+    "headless-server:dev": "NODE_ENV=development node scripts/headless-server.js",
+    "build:headless": "HEADLESS_SERVER=true npm run build",
+    "deploy:headless": "HEADLESS_SERVER=true npm run install:server && npm run build:headless",
+    "install:headless": "HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm install --production=false --no-optional"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
