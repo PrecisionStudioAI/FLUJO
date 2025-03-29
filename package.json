@@ -39,7 +39,12 @@
     "headless-server:dev": "NODE_ENV=development node scripts/headless-server.js",
     "build:headless": "HEADLESS_SERVER=true npm run build",
     "deploy:headless": "HEADLESS_SERVER=true npm run install:server && npm run build:headless",
-    "install:headless": "HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm install --production=false --no-optional"
+    "install:headless": "HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm install --production=false --no-optional",
+    
+    "setup:swap": "bash scripts/create-swap.sh",
+    "build:low-memory": "node scripts/build-low-memory.js",
+    "deploy:low-memory": "npm run install:headless && npm run build:low-memory",
+    "deploy:minimal": "npm run setup:swap && npm run deploy:low-memory && npm run headless-server:network"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

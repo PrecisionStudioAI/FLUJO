@@ -2,6 +2,43 @@
 
 This guide explains how to deploy FLUJO in a server environment without Electron dependencies. This is ideal for low-resource servers like 1GB RAM droplets where installing the full Electron package can be problematic.
 
+## Deploying on Low-Memory Servers (1GB RAM)
+
+For very resource-constrained environments like 1GB RAM droplets, use our optimized deployment method:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/FLUJO.git
+cd FLUJO
+
+# One-step deployment (creates swap file, installs dependencies, builds with memory limits, starts server)
+npm run deploy:minimal
+```
+
+This will:
+1. Create a 2GB swap file to prevent out-of-memory errors
+2. Install dependencies without Electron
+3. Build the application with memory constraints
+4. Start the headless server in network mode
+
+### Manual Low-Memory Deployment Steps
+
+If you prefer to run the steps individually:
+
+```bash
+# 1. Create swap file (needs sudo)
+npm run setup:swap
+
+# 2. Install dependencies (no Electron)
+npm run install:headless
+
+# 3. Build with memory constraints
+npm run build:low-memory
+
+# 4. Start the headless server
+npm run headless-server:network
+```
+
 ## True Headless Server Installation
 
 For the most minimal server installation without any Electron or UI dependencies:
@@ -107,6 +144,18 @@ npm install --no-optional --ignore-scripts
 
 # Install dev dependencies (needed for building)
 npm install @babel/preset-env @babel/preset-typescript --no-save
+```
+
+### Build fails with "JavaScript heap out of memory"
+
+This is common on low-memory servers (1GB RAM):
+
+```bash
+# Create a swap file (if not already done)
+npm run setup:swap
+
+# Use the memory-constrained build process
+npm run build:low-memory
 ```
 
 ### Server won't start
