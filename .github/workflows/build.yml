@@ -3,10 +3,10 @@ name: Build FLUJO Application
 on:
   push:
     branches:
-      - main
+      - feature/server
   pull_request:
     branches:
-      - main
+      - feature/server
   workflow_dispatch:
     inputs:
       environment:
@@ -55,7 +55,7 @@ jobs:
   create-release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/server'
     
     steps:
       - name: Download build artifacts

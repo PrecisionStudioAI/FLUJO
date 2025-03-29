@@ -17,13 +17,13 @@ The workflow is defined in `.github/workflows/build.yml` and consists of two job
 1. **Build Job**: Installs dependencies and builds the application without Electron
 2. **Create Release Job**: Packages the built artifacts and creates a GitHub release
 
-The workflow runs automatically on pushes to the main branch or can be triggered manually.
+The workflow runs automatically on pushes to the `feature/server` branch or can be triggered manually.
 
 ## How to Setup
 
 ### 1. Push the Configuration Files
 
-Ensure the following files are in your repository:
+Ensure the following files are in your repository under the `feature/server` branch:
 
 - `.github/workflows/build.yml` - GitHub Actions workflow
 - `scripts/deploy-server-from-artifact.sh` - Deployment script
