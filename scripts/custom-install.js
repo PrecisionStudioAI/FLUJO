@@ -13,9 +13,10 @@ const path = require('path');
 
 // Detect if we're in a server environment
 const isServerBuild = process.env.SERVER_BUILD === 'true';
+// A simplified check - if NODE_ENV is production and we're not explicitly requesting Electron
 const isServerEnvironment = isServerBuild || 
-                           process.env.NODE_ENV === 'production' && 
-                           !process.env.ELECTRON_RUN_AS_NODE;
+                           (process.env.NODE_ENV === 'production' && 
+                            process.env.INCLUDE_ELECTRON !== 'true');
 
 // Get the package.json path
 const packageJsonPath = path.join(__dirname, '..', 'package.json');

@@ -17,7 +17,7 @@
     "electron-dist-all": "npm run build && electron-builder -mwl",
     "postinstall": "node scripts/custom-install.js",
     "postinstall:electron": "electron-builder install-app-deps",
-    "install:server": "npm install --no-optional",
+    "install:server": "INCLUDE_ELECTRON=false npm install --no-optional",
     "headless": "electron . --headless",
     "headless-docs": "electron . --headless --docs",
     "headless-timeout": "electron . --headless --timeout=60",
