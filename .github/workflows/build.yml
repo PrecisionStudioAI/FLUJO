@@ -20,8 +20,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    
+    runs-on: self-hosted
+    # Add labels to ensure it runs on your dedicated runners
+    labels:
+      - self-hosted-linux
+      - precision-runner
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,15 +34,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
       
       - name: Install dependencies (without Electron)
         run: |
           HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm install --production=false --no-optional
       
+      - name: Temporarily rename .babelrc for Next.js build
+        run: |
+          mv .babelrc .babelrc.backup
+      
       - name: Build application
         run: |
-          npm run build:headless
+          npm run build:ci
+      
+      - name: Restore .babelrc
+        run: |
+          mv .babelrc.backup .babelrc
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -54,7 +65,10 @@ jobs:
           
   create-release:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    labels:
+      - self-hosted-linux
+      - precision-runner
     if: github.event_name == 'push' && github.ref == 'refs/heads/feature/server'
     
     steps:

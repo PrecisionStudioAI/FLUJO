@@ -38,6 +38,7 @@
     "headless-server:network": "node scripts/headless-server.js --network",
     "headless-server:dev": "NODE_ENV=development node scripts/headless-server.js",
     "build:headless": "HEADLESS_SERVER=true npm run build",
+    "build:ci": "NODE_ENV=production HEADLESS_SERVER=true SERVER_BUILD=true next build",
     "deploy:headless": "HEADLESS_SERVER=true npm run install:server && npm run build:headless",
     "install:headless": "HEADLESS_SERVER=true FORCE_SERVER_MODE=true npm install --production=false --no-optional",
     
