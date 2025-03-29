@@ -64,9 +64,14 @@ jobs:
   create-release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/server'
+    if: github.event_name == 'push' && contains(github.ref, 'feature/server')
     
     steps:
+      - name: Debug GitHub context
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "Comparison result: ${{ contains(github.ref, 'feature/server') }}"
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
