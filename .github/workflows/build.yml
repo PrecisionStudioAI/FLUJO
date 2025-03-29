@@ -20,11 +20,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
-    # Add labels to ensure it runs on your dedicated runners
-    labels:
-      - self-hosted-linux
-      - precision-runner
+    runs-on: [self-hosted, self-hosted-linux, precision-runner]
 
     steps:
       - name: Checkout repository
@@ -65,10 +61,7 @@ jobs:
           
   create-release:
     needs: build
-    runs-on: self-hosted
-    labels:
-      - self-hosted-linux
-      - precision-runner
+    runs-on: [self-hosted, self-hosted-linux, precision-runner]
     if: github.event_name == 'push' && github.ref == 'refs/heads/feature/server'
     
     steps:
