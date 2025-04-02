@@ -49,22 +49,21 @@ const effectiveMemory = totalMemory + swapSpace;
 console.log(`📊 Effective memory (RAM + swap): ${effectiveMemory}MB`);
 
 // Set very conservative memory limits - much lower than before
-// For 1GB droplet, we'll use just 384MB max for Node.js
-const memoryLimit = Math.min(Math.round(totalMemory * 0.4), 384);
+const memoryLimit = Math.min(Math.round(totalMemory * 0.7), 768); // Increased limit for initial build
 console.log(`🔧 Setting Node.js memory limit to: ${memoryLimit}MB`);
 
 // Prepare environment variables with extra optimizations
 const env = {
   ...process.env,
-  NODE_OPTIONS: `--max-old-space-size=${memoryLimit} --expose-gc --no-warnings --max-http-header-size=8192 --use-largepages=silent`,
-  NEXT_TELEMETRY_DISABLED: '1', // Disable telemetry to save resources
+  NODE_OPTIONS: `--max-old-space-size=${memoryLimit}`,
+  NEXT_TELEMETRY_DISABLED: '1',
   HEADLESS_SERVER: 'true',
   SERVER_BUILD: 'true',
-  // Reduce number of workers for webpack/babel
-  NEXT_WEBPACK_WORKERS: '1',  
+  // Reduce workers to minimum
+  NEXT_WEBPACK_WORKERS: '1',
   NEXT_BABEL_WORKERS: '1',
-  // Tell Next.js we're in a memory-constrained environment
-  NEXT_MEMORY_CONSTRAINED: 'true'
+  // Production mode
+  NODE_ENV: 'production'
 };
 
 // Function to run a command
@@ -108,29 +107,24 @@ async function main() {
     await runCommand('rm', ['-rf', '.next']);
     console.log('✅ Cleaned previous build files');
     
-    // Trigger garbage collection if available
-    if (global.gc) {
-      console.log('\n🧹 Running garbage collection...');
-      global.gc();
-    }
-    
     // Build in stages to reduce memory pressure
     console.log('\n🏗️ Starting staged production build with ultra-low memory constraints...');
     
     // We'll build using the experimental --no-mangling flag to reduce memory usage
     try {
       console.log('\n➡️ Stage 1: Running Next.js build with reduced memory usage...');
-      await runCommand('next', ['build', '--no-lint']);
+      // Use Next.js built-in optimizations
+      await runCommand('next', ['build', '--no-lint', '--no-mangling']);
     } catch (error) {
       console.error('\n❌ Standard build failed, trying with more aggressive memory optimizations...');
       
-      // If the normal build fails, try with more extreme memory constraints
-      // This disables some optimizations but is more likely to complete
-      env.NODE_OPTIONS += ' --optimize-for-size';
+      // Reduce memory limit for second attempt
+      const reducedMemoryLimit = Math.round(memoryLimit * 0.6);
+      env.NODE_OPTIONS = `--max-old-space-size=${reducedMemoryLimit}`;
       
       try {
-        // Retry with extreme memory optimization
-        await runCommand('next', ['build', '--no-lint']);
+        // Try with minimal features
+        await runCommand('next', ['build', '--no-lint', '--no-mangling', '--experimental-minify']);
       } catch (retryError) {
         throw new Error('Build failed even with extreme memory optimizations. Consider adding more swap space.');
       }

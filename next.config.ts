@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import path from 'path';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -52,13 +51,6 @@ const nextConfig: NextConfig = {
           },
         },
       };
-      
-      // Configure watchOptions for better file watching
-      config.watchOptions = {
-        ...config.watchOptions,
-        poll: 1000, // Check for changes every second
-        aggregateTimeout: 300, // Delay before rebuilding
-      };
     }
     
     // Exclude node binary files from being processed by webpack
@@ -107,7 +99,7 @@ const nextConfig: NextConfig = {
     maxInactiveAge: 15 * 1000,
     // Number of pages to keep in memory
     pagesBufferLength: 2,
-  },
+  }
 };
 
 export default nextConfig;
